@@ -103,6 +103,11 @@ select,input[type=number],input[type=text]{
 .ghost{padding:7px 13px; background:var(--sheet); border:1px solid var(--rule-2); cursor:pointer; font-size:13.5px}
 .ghost:hover{background:#F5F6F4}
 .ghost:disabled{color:var(--rule-2); cursor:not-allowed}
+.btn-teacher{background:var(--navy); border-color:var(--navy); color:#fff}
+.btn-teacher:hover{background:#0F2439; border-color:#0F2439}
+.btn-student{background:var(--ok); border-color:var(--ok); color:#fff}
+.btn-student:hover{background:#255540; border-color:#255540}
+.btn-teacher:disabled,.btn-student:disabled{background:var(--sheet); border-color:var(--rule-2); color:var(--rule-2)}
 
 /* ── 2단 본문 ──────────────────────────────── */
 .board{display:grid; grid-template-columns:288px 1fr; gap:18px; align-items:start}
@@ -222,6 +227,38 @@ tr.hit td{background:var(--warn-bg) !important}
   .grp{padding:3px 0}
   .grp + .grp{margin-top:6px; padding-top:7px; border-top:1px dotted #bbb}
   .grp .gname{min-width:2.6em}
+
+  /* 현황표는 3쪽 안에 들어가도록 단계적으로 좁힌다 */
+  thead{display:table-header-group}          /* 쪽이 넘어가면 머리행을 다시 찍는다 */
+
+  .sheetdoc.roll-b table{font-size:9.5pt}
+  .sheetdoc.roll-b th, .sheetdoc.roll-b td{padding:5px 8px; line-height:1.45}
+  .sheetdoc.roll-b .roll .nm{font-size:10pt}
+  .sheetdoc.roll-b .roll .judge{font-size:8.5pt; line-height:1.35}
+  .sheetdoc.roll-b .grp{padding:1px 0}
+  .sheetdoc.roll-b .grp + .grp{margin-top:3px; padding-top:3px}
+  .sheetdoc.roll-b .sep{margin:0 7px}
+
+  .sheetdoc.roll-c table{font-size:9pt}
+  .sheetdoc.roll-c th, .sheetdoc.roll-c td{padding:4px 6px; line-height:1.4}
+  .sheetdoc.roll-c .roll .nm{font-size:9.5pt}
+  .sheetdoc.roll-c .roll .judge{font-size:8pt; line-height:1.3}
+  .sheetdoc.roll-c .grp{display:inline; padding:0}
+  .sheetdoc.roll-c .grp + .grp{border:none; margin:0; padding:0}
+  .sheetdoc.roll-c .grp + .grp::before{content:" | "; color:#aaa; margin:0 5px}
+  .sheetdoc.roll-c .sep{margin:0 5px}
+  .sheetdoc.roll-c .subj{padding:0 2px}
+
+  .sheetdoc.roll-d table{font-size:8pt}
+  .sheetdoc.roll-d th, .sheetdoc.roll-d td{padding:3px 5px; line-height:1.35}
+  .sheetdoc.roll-d .roll .nm{font-size:8.5pt}
+  .sheetdoc.roll-d .roll .judge{font-size:7.5pt; line-height:1.25}
+  .sheetdoc.roll-d .grp{display:inline; padding:0}
+  .sheetdoc.roll-d .grp + .grp{border:none; margin:0; padding:0}
+  .sheetdoc.roll-d .grp + .grp::before{content:" | "; color:#aaa; margin:0 4px}
+  .sheetdoc.roll-d .sep{margin:0 4px}
+  .sheetdoc.roll-d .subj{padding:0 1px}
+  .sheetdoc.roll-d h1{font-size:14pt}
 
   /* 내용이 많은 확인표는 한 쪽에 들어가도록 단계적으로 좁힌다 */
   .sheetdoc.tight{font-size:10.5pt; line-height:1.65}
@@ -393,8 +430,8 @@ tr.hit td{background:var(--warn-bg) !important}
       <button class="tab" id="tabOne" aria-selected="false">학생 상세</button>
       <div class="acts">
         <button class="ghost" id="printOne">인쇄</button>
-        <button class="ghost" id="printList">인쇄</button>
-        <button class="ghost" id="printPack">확인표 묶음 인쇄</button>
+        <button class="ghost btn-teacher" id="printList">인쇄(교사 확인용)</button>
+        <button class="ghost btn-student" id="printPack">인쇄(학생 확인용)</button>
       </div>
     </div>
     <div class="pane" id="pane"></div>
@@ -1076,15 +1113,17 @@ tr.hit td{background:var(--warn-bg) !important}
     var one = $('printOne'), list = $('printList');
     one.classList.toggle('hidden', !onStudent);
     list.classList.toggle('hidden', onStudent);
+    one.textContent = '인쇄';
     one.title = '이 학생의 확인표를 한 쪽 인쇄합니다';
     one.disabled = !S.sel || !S.index[S.sel];
-    list.title = (S.tab === 'sum' ? '위반 요약을' : who + '현황표를') + ' 인쇄합니다';
+    list.textContent = '인쇄(교사 확인용)';
+    list.title = (S.tab === 'sum' ? '위반 요약을' : who + '현황표 ' + n + '명분을') + ' 인쇄합니다';
     list.disabled = !n;
 
     var pack = $('printPack');
     pack.classList.toggle('hidden', onStudent);   // 개별 화면에서는 묶음 인쇄를 숨긴다
-    pack.textContent = '확인표 묶음 ' + n + '명';
-    pack.title = who + n + '명의 확인표를 한 번에, 학생마다 한 쪽씩 인쇄합니다';
+    pack.textContent = '인쇄(학생 확인용)';
+    pack.title = who + n + '명의 확인표를 학생마다 한 쪽씩 인쇄합니다';
     pack.disabled = !n;
 
     var x = $('xlsBtn');
