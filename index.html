@@ -251,6 +251,51 @@ tr.hit td{background:var(--warn-bg) !important}
   .sheetdoc.tight2 .sep{margin:0 6px}
   .sheetdoc.tight2 .subj{padding:1px 3px}
 
+  /* 현황표를 3쪽에 맞추는 단계 */
+  .sheetdoc.roll-b table{font-size:10pt}
+  .sheetdoc.roll-b th, .sheetdoc.roll-b td{padding:6px 9px; line-height:1.5}
+  .sheetdoc.roll-b .grp + .grp{margin-top:4px; padding-top:4px}
+  .sheetdoc.roll-b .sep{margin:0 8px}
+  .sheetdoc.roll-b .roll .judge{font-size:8.5pt}
+
+  .sheetdoc.roll-c table{font-size:9pt}
+  .sheetdoc.roll-c th, .sheetdoc.roll-c td{padding:4px 7px; line-height:1.4}
+  .sheetdoc.roll-c .grp{padding:1px 0}
+  .sheetdoc.roll-c .grp + .grp{margin-top:2px; padding-top:3px}
+  .sheetdoc.roll-c .sep{margin:0 6px}
+  .sheetdoc.roll-c .subj{padding:1px 3px}
+  .sheetdoc.roll-c .roll .nm{font-size:9.5pt}
+  .sheetdoc.roll-c .roll .judge{font-size:8pt; line-height:1.35}
+
+  .sheetdoc.roll-d table{font-size:8pt}
+  .sheetdoc.roll-d th, .sheetdoc.roll-d td{padding:2px 5px; line-height:1.3}
+  .sheetdoc.roll-d .grp{padding:0}
+  .sheetdoc.roll-d .grp + .grp{margin-top:1px; padding-top:2px}
+  .sheetdoc.roll-d .sep{margin:0 4px}
+  .sheetdoc.roll-d .subj{padding:0 2px}
+  .sheetdoc.roll-d .roll .nm{font-size:8.5pt}
+  .sheetdoc.roll-d .roll .judge{font-size:7.5pt; line-height:1.25}
+  .sheetdoc.roll-d h1{font-size:14pt}
+  .sheetdoc.roll-d .meta{margin-bottom:10px}
+
+  /* 선택군을 줄바꿈 없이 한 줄에 이어 붙인다 */
+  .sheetdoc.roll-e table, .sheetdoc.roll-f table{font-size:8pt}
+  .sheetdoc.roll-f table{font-size:7.5pt}
+  .sheetdoc.roll-e th, .sheetdoc.roll-e td{padding:2px 5px; line-height:1.3}
+  .sheetdoc.roll-f th, .sheetdoc.roll-f td{padding:1.5px 4px; line-height:1.25}
+  .sheetdoc.roll-e .grp, .sheetdoc.roll-f .grp{display:inline; padding:0; margin:0; border:none}
+  .sheetdoc.roll-e .grp + .grp::before, .sheetdoc.roll-f .grp + .grp::before{
+    content:"\2502"; color:#aaa; margin:0 6px;
+  }
+  .sheetdoc.roll-e .gname, .sheetdoc.roll-f .gname{min-width:0; margin-right:3px}
+  .sheetdoc.roll-e .sep, .sheetdoc.roll-f .sep{margin:0 4px}
+  .sheetdoc.roll-e .subj, .sheetdoc.roll-f .subj{padding:0 2px}
+  .sheetdoc.roll-e .roll .nm{font-size:8.5pt}
+  .sheetdoc.roll-f .roll .nm{font-size:8pt}
+  .sheetdoc.roll-e .roll .judge, .sheetdoc.roll-f .roll .judge{font-size:7pt; line-height:1.25}
+  .sheetdoc.roll-e h1, .sheetdoc.roll-f h1{font-size:14pt}
+  .sheetdoc.roll-e .meta, .sheetdoc.roll-f .meta{margin-bottom:9px}
+
   tr.hit td, .subj.base, .verdictbox, .subj.dup{-webkit-print-color-adjust:exact; print-color-adjust:exact}
   tr{page-break-inside:avoid}
   @page{margin:15mm}
@@ -1037,6 +1082,7 @@ tr.hit td{background:var(--warn-bg) !important}
     list.disabled = !n;
 
     var pack = $('printPack');
+    pack.classList.toggle('hidden', onStudent);   // 개별 화면에서는 묶음 인쇄를 숨긴다
     pack.textContent = '확인표 묶음 ' + n + '명';
     pack.title = who + n + '명의 확인표를 한 번에, 학생마다 한 쪽씩 인쇄합니다';
     pack.disabled = !n;
@@ -1174,6 +1220,41 @@ tr.hit td{background:var(--warn-bg) !important}
              uniq.map(function(x){ return '<span class="subj' + (S.base[x] ? ' base' : '') + '">' + esc(x) + '</span>'; })
                  .join('<span class="sep">/</span>') + '</span>';
     }).join('');
+  }
+
+  // 현황표를 3쪽 안에 담을 수 있는 가장 큰 글자 크기를 고른다.
+  // A4 297mm - 위아래 여백 30mm = 쪽당 267mm. 제목·머리행 몫으로 30mm를 뺀다.
+  // line: 한 줄 높이(mm), pad: 행 위아래 여백(mm), gap: 선택군 사이 간격(mm)
+  // perLine: 한 줄에 이어 붙이는 선택군 수 (1이면 선택군마다 줄바꿈)
+  var ROLL_STEPS = [
+    { cls: '',        line: 6.60, pad: 4.76, gap: 2.4, perLine: 1 },   // 표 11pt
+    { cls: ' roll-b', line: 5.29, pad: 3.18, gap: 1.6, perLine: 1 },   // 10pt
+    { cls: ' roll-c', line: 4.44, pad: 2.12, gap: 1.1, perLine: 1 },   // 9pt
+    { cls: ' roll-d', line: 3.66, pad: 1.06, gap: 0.7, perLine: 1 },   // 8pt
+    { cls: ' roll-e', line: 3.66, pad: 1.06, gap: 0.4, perLine: 3 },   // 8pt, 선택군을 한 줄에
+    { cls: ' roll-f', line: 3.35, pad: 0.80, gap: 0.4, perLine: 4 }    // 7.5pt, 더 촘촘히
+  ];
+  function rollDensity(){
+    var v = inScope();
+    if(!v.length) return '';
+    var rows = v.map(function(r){
+      var st = S.stu[r.id], g = {};
+      if(st) st.picks.forEach(function(p){ g[p.group || '기타'] = 1; });
+      return {
+        groups: Math.max(1, Object.keys(g).length),
+        tags: (r.dup.length ? 1 : 0) + (r.over ? 1 : 0)
+      };
+    });
+    var room = 3 * 267 - 30;
+    for(var i = 0; i < ROLL_STEPS.length; i++){
+      var st = ROLL_STEPS[i], mm = 0;
+      rows.forEach(function(r){
+        var n = Math.max(Math.ceil(r.groups / st.perLine), r.tags, 2);  // 기본 교과 칸이 두 줄
+        mm += n * st.line + (n - 1) * st.gap + st.pad + 0.53;
+      });
+      if(mm <= room) return st.cls;
+    }
+    return ROLL_STEPS[ROLL_STEPS.length - 1].cls;
   }
 
   function classHTML(){
@@ -1317,7 +1398,8 @@ tr.hit td{background:var(--warn-bg) !important}
         c.dup + '명</td><td class="c">' + c.over + '명</td></tr></tbody></table>';
       printHTML(doc('선택과목 수요조사 점검 결과' + (S.klass === 'all' ? '' : ' · ' + klassLabel(S.klass)), head + summaryHTML()));
     }
-    else printHTML(doc('선택과목 ' + (S.klass === 'all' ? '전체 현황' : klassLabel(S.klass) + ' 현황'), classHTML()));
+    else printHTML(doc('선택과목 ' + (S.klass === 'all' ? '전체 현황' : klassLabel(S.klass) + ' 현황'),
+                       classHTML(), rollDensity()));
   });
   function printBulk(){
     var v = visible();
