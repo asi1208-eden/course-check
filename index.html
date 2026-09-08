@@ -164,6 +164,7 @@ tr.hit td{background:var(--warn-bg) !important}
 .subj.dup{color:var(--seal); font-weight:600; text-decoration:underline}
 .legend{font-size:12.5px; color:var(--ink-2); margin:8px 0 0}
 .onscreen{color:var(--ink-2)}
+.onprint{display:none}
 .legend i{font-style:normal; background:var(--mark); padding:0 4px}
 .roll{table-layout:fixed}
 .roll .nm{text-align:center; word-break:keep-all}
@@ -194,22 +195,22 @@ tr.hit td{background:var(--warn-bg) !important}
 
   .sheetdoc h1{font-size:16.5pt; margin:0 0 4px; color:#000; letter-spacing:-0.02em}
   .sheetdoc .meta{font-size:9.5pt; color:#444; margin:0 0 18px; line-height:1.5}
-  .sheetdoc h2{font-size:15pt; margin:0 0 4px}
-  .sheetdoc h2 .tag{font-size:10.5pt; padding:1px 6px}
-  .sheetdoc h3{font-size:12.5pt; margin:24px 0 9px}
-  .sheetdoc .who{font-size:11pt; color:#333; margin:0 0 16px}
+  .sheetdoc h2{display:none}                  /* 제목 줄과 겹치므로 종이에서는 뺀다 */
+  .sheetdoc h3{font-size:12.5pt; margin:18px 0 8px}
+  .sheetdoc .who{font-size:11pt; color:#333; margin:0 0 14px}
+  .onprint{display:inline}
+  .gauge{display:none}
 
-  .verdictbox{font-size:11pt; line-height:1.8; padding:13px 16px; margin-bottom:20px; border:1px solid #999}
-  .verdictbox b{font-size:12.5pt; margin-bottom:5px}
-  .verdictbox ul{margin:8px 0 0; padding-left:20px}
-  .verdictbox li{margin-top:7px}
-  .note{font-size:10.5pt; line-height:1.9; color:#333}
-  .legend{font-size:9.5pt; line-height:1.6; margin-top:10px}
+  .verdictbox{font-size:11pt; line-height:1.7; padding:11px 14px; margin-bottom:16px; border:1px solid #999}
+  .verdictbox b{font-size:12.5pt; margin-bottom:4px}
+  .verdictbox ul{margin:6px 0 0; padding-left:20px}
+  .verdictbox li{margin-top:5px}
+  .note{font-size:10.5pt; line-height:1.75; color:#333}
+  .legend{font-size:9.5pt; line-height:1.5; margin-top:8px}
   .onscreen{display:none !important}
-  .gauge{height:9px; margin:8px 0 6px}
 
   table{font-size:11pt; margin-top:4px}
-  th,td{border:1px solid #888; padding:10px 12px; line-height:1.85; vertical-align:top}
+  th,td{border:1px solid #888; padding:9px 12px; line-height:1.7; vertical-align:top}
   th{background:#ececec !important; font-size:10pt; -webkit-print-color-adjust:exact; print-color-adjust:exact}
   td.c,th.c{white-space:nowrap}
   tbody tr:nth-child(even) td{background:#fff}
@@ -221,6 +222,34 @@ tr.hit td{background:var(--warn-bg) !important}
   .grp{padding:3px 0}
   .grp + .grp{margin-top:6px; padding-top:7px; border-top:1px dotted #bbb}
   .grp .gname{min-width:2.6em}
+
+  /* 내용이 많은 확인표는 한 쪽에 들어가도록 단계적으로 좁힌다 */
+  .sheetdoc.tight{font-size:10.5pt; line-height:1.65}
+  .sheetdoc.tight .meta{margin-bottom:12px}
+  .sheetdoc.tight h1{font-size:15pt}
+  .sheetdoc.tight h3{font-size:11.5pt; margin:13px 0 6px}
+  .sheetdoc.tight .who{margin-bottom:10px}
+  .sheetdoc.tight .verdictbox{font-size:10pt; padding:9px 12px; margin-bottom:12px; line-height:1.55}
+  .sheetdoc.tight .verdictbox b{font-size:11.5pt}
+  .sheetdoc.tight .note{font-size:9.5pt; line-height:1.55}
+  .sheetdoc.tight table{font-size:10pt}
+  .sheetdoc.tight th, .sheetdoc.tight td{padding:6px 9px; line-height:1.5}
+  .sheetdoc.tight .sep{margin:0 8px}
+
+  .sheetdoc.tight2{font-size:9.5pt; line-height:1.5}
+  .sheetdoc.tight2 .meta{margin-bottom:9px}
+  .sheetdoc.tight2 h1{font-size:14pt}
+  .sheetdoc.tight2 h3{font-size:10.5pt; margin:10px 0 5px}
+  .sheetdoc.tight2 .who{margin-bottom:8px}
+  .sheetdoc.tight2 .verdictbox{font-size:9.5pt; padding:7px 10px; margin-bottom:9px; line-height:1.45}
+  .sheetdoc.tight2 .verdictbox b{font-size:10.5pt}
+  .sheetdoc.tight2 .verdictbox li{margin-top:3px}
+  .sheetdoc.tight2 .note{font-size:9pt; line-height:1.45}
+  .sheetdoc.tight2 .legend{font-size:8.5pt; margin-top:5px}
+  .sheetdoc.tight2 table{font-size:9.5pt}
+  .sheetdoc.tight2 th, .sheetdoc.tight2 td{padding:4px 7px; line-height:1.4}
+  .sheetdoc.tight2 .sep{margin:0 6px}
+  .sheetdoc.tight2 .subj{padding:1px 3px}
 
   tr.hit td, .subj.base, .verdictbox, .subj.dup{-webkit-print-color-adjust:exact; print-color-adjust:exact}
   tr{page-break-inside:avoid}
@@ -1176,6 +1205,24 @@ tr.hit td{background:var(--warn-bg) !important}
     return h;
   }
 
+  // 확인표 한 쪽에 담기도록, 표 줄 수에 따라 인쇄 밀도를 정한다
+  function cardDensity(sid){
+    var st = S.stu[sid]; if(!st) return '';
+    var keys = {};
+    st.picks.forEach(function(p){
+      var k = (p.group || '기타') + '|' + p.grade + '-' + p.sem;
+      keys[k] = (keys[k] || 0) + 1;
+    });
+    var n = 0;
+    Object.keys(keys).forEach(function(k){
+      n += 1;
+      n += Math.max(0, Math.ceil(keys[k] / 3) - 1);   // 한 칸에 과목이 많으면 줄이 접힌다
+    });
+    var v = S.index[sid];
+    if(v){ n += v.dup.length; }                       // 판정 상자도 자리를 먹는다
+    return n > 18 ? ' tight2' : n > 12 ? ' tight' : '';
+  }
+
   function cardHTML(sid){
     var st = S.sub.students.find(function(s){ return s.id === sid; });
     var v = S.index[sid];
@@ -1185,7 +1232,8 @@ tr.hit td{background:var(--warn-bg) !important}
     v.dup.forEach(function(d){ dupSet[d.group + '|' + d.subject] = true; });
 
     var h = '<h2>' + esc(st.name || '이름 없음') + ' <span class="tag">' + esc(st.id) + '</span></h2>';
-    h += '<p class="who">' + esc(klassLabel(v.klass) + ' ' + v.no + '번') + ' · ' +
+    h += '<p class="who">' + esc(klassLabel(v.klass) + ' ' + v.no + '번') +
+         ' · <span class="onprint">학번 ' + esc(st.id) + ' · </span>' +
          (st.track ? esc(st.track) + ' · ' : '') + '선택 ' + st.picks.length + '과목</p>';
 
     if(v.dup.length || v.over){
@@ -1242,8 +1290,8 @@ tr.hit td{background:var(--warn-bg) !important}
   }
 
   /* ── 인쇄 ─────────────────────────────────── */
-  function doc(title, body){
-    return '<div class="sheetdoc"><h1>' + esc(title) + '</h1>' +
+  function doc(title, body, cls){
+    return '<div class="sheetdoc' + (cls || '') + '"><h1>' + esc(title) + '</h1>' +
            '<p class="meta">' + new Date().toLocaleDateString('ko-KR') +
            ' 출력 · 기본 교과 상한 ' + S.limit + unit() + '</p>' + body + '</div>';
   }
@@ -1254,7 +1302,8 @@ tr.hit td{background:var(--warn-bg) !important}
   $('printOne').addEventListener('click', function(){
     if(!S.sel || !S.index[S.sel]) return;
     var r = S.index[S.sel];
-    printHTML(doc('선택과목 확인표 · ' + klassLabel(r.klass) + ' ' + r.no + '번 ' + (r.name || r.id), cardHTML(r.id)));
+    printHTML(doc('선택과목 확인표 · ' + klassLabel(r.klass) + ' ' + r.no + '번 ' + (r.name || r.id),
+                  cardHTML(r.id), cardDensity(r.id)));
   });
 
   $('printPack').addEventListener('click', printBulk);
@@ -1275,7 +1324,8 @@ tr.hit td{background:var(--warn-bg) !important}
     if(!v.length) return;
     if(v.length > 40 && !confirm(v.length + '명이면 ' + v.length + '쪽이 나옵니다. 계속할까요?')) return;
     printHTML(v.map(function(r){
-      return doc('선택과목 확인표 · ' + klassLabel(r.klass) + ' ' + r.no + '번 ' + (r.name || r.id), cardHTML(r.id));
+      return doc('선택과목 확인표 · ' + klassLabel(r.klass) + ' ' + r.no + '번 ' + (r.name || r.id),
+                 cardHTML(r.id), cardDensity(r.id));
     }).join(''));
   }
   window.addEventListener('afterprint', function(){ $('printArea').innerHTML = ''; });
