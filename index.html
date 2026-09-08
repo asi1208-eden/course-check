@@ -118,11 +118,15 @@ select,input[type=number],input[type=text]{
 .roster-foot{padding:8px 12px; border-top:1px solid var(--rule); font-size:12.5px; color:var(--ink-2)}
 
 .detail{background:var(--sheet); border:1px solid var(--rule); min-height:340px}
-.tabs{display:flex; border-bottom:1px solid var(--rule)}
+.tabs{display:flex; flex-wrap:wrap; border-bottom:1px solid var(--rule)}
 .tab{padding:11px 16px; background:none; border:none; border-bottom:2px solid transparent; cursor:pointer; font-size:14px; color:var(--ink-2)}
 .tab[aria-selected="true"]{color:var(--navy); border-bottom-color:var(--navy); font-weight:600}
 .tab .right{margin-left:auto}
-.tabs .acts{margin-left:auto; display:flex; gap:6px; align-items:center; padding:7px 10px}
+.tabs .acts{margin-left:auto; display:flex; flex-wrap:wrap; gap:6px; align-items:center; padding:7px 10px}
+@media (max-width:820px){
+  .tabs .acts{margin-left:0; width:100%; border-top:1px solid var(--rule)}
+  .tabs .acts .ghost{flex:1; min-width:0; font-size:12.5px; padding:7px 6px}
+}
 .pane{padding:18px}
 .pane h2{margin:0 0 2px; font-size:19px; font-weight:600; letter-spacing:-0.02em}
 .pane h3{margin:22px 0 6px; font-size:14px; font-weight:600}
@@ -259,7 +263,9 @@ tr.hit td{background:var(--warn-bg) !important}
       <button class="tab" id="tabClass" aria-selected="false">반 명단</button>
       <button class="tab" id="tabOne" aria-selected="false">학생 상세</button>
       <div class="acts">
-        <button class="ghost" id="printBtn">인쇄</button>
+        <button class="ghost" id="printOne">이 학생 인쇄</button>
+        <button class="ghost" id="printList">명단 인쇄</button>
+        <button class="ghost" id="printPack">확인표 묶음 인쇄</button>
       </div>
     </div>
     <div class="pane" id="pane"></div>
@@ -842,19 +848,30 @@ tr.hit td{background:var(--warn-bg) !important}
       '<div class="stat"><span>학기 중복</span><strong>' + c.dup + '명</strong></div>' +
       '<div class="stat"><span>기본 교과 ' + S.limit + unit() + ' 초과</span><strong>' + c.over + '명</strong></div>' +
       '<div class="acts">' +
-        '<button class="ghost" id="xlsBtn">엑셀로 저장</button>' +
-        '<button class="ghost" id="bulkBtn">명단 전체 인쇄</button>' +
+        '<button class="ghost" id="xlsBtn">엑셀 저장</button>' +
       '</div>';
     $('xlsBtn').addEventListener('click', exportXlsx);
-    $('bulkBtn').addEventListener('click', printBulk);
     syncBulk();
   }
 
   function syncBulk(){
-    var b = $('bulkBtn'); if(!b) return;
     var n = visible().length;
-    b.textContent = (S.klass === 'all' ? '보이는 학생 ' : klassLabel(S.klass) + ' ') + n + '명 확인표 인쇄';
-    b.disabled = !n;
+    var who = S.klass === 'all' ? '' : klassLabel(S.klass) + ' ';
+
+    var one = $('printOne');
+    one.textContent = S.sel && S.index[S.sel] ? (S.index[S.sel].name || S.sel) + ' 인쇄' : '이 학생 인쇄';
+    one.disabled = !S.sel || !S.index[S.sel];
+
+    $('printList').textContent = who ? who + '명단 인쇄' : '전체 명단 인쇄';
+    $('printList').disabled = !n;
+
+    var pack = $('printPack');
+    pack.textContent = '확인표 묶음 ' + n + '명';
+    pack.title = who + n + '명의 확인표를 한 번에, 학생마다 한 쪽씩 인쇄합니다';
+    pack.disabled = !n;
+
+    var x = $('xlsBtn');
+    if(x){ x.textContent = '엑셀 저장 (' + who + n + '명)'; x.disabled = !n; }
   }
 
   function renderChips(){
@@ -928,15 +945,13 @@ tr.hit td{background:var(--warn-bg) !important}
     $('tabClass').textContent = S.klass === 'all' ? '전체 명단' : klassLabel(S.klass) + ' 명단';
     $('tabOne').textContent = S.sel && S.index[S.sel]
       ? '학생 상세 · ' + (S.index[S.sel].name || S.sel) : '학생 상세';
-    $('printBtn').textContent = S.tab === 'sum' ? '요약 인쇄'
-      : S.tab === 'class' ? '명단 인쇄' : '이 학생 인쇄';
-    $('printBtn').disabled = S.tab === 'one' && !S.sel;
     $('pane').innerHTML = S.tab === 'sum' ? summaryHTML()
       : S.tab === 'class' ? classHTML()
       : (S.sel ? cardHTML(S.sel) : '<div class="blank"><b>왼쪽에서 학생을 고르세요</b>선택 내역과 판정 근거를 한 화면에 보여 줍니다.</div>');
     $('pane').querySelectorAll('[data-go]').forEach(function(el){
       el.addEventListener('click', function(){ select(el.dataset.go); });
     });
+    syncBulk();
   }
 
   function summaryHTML(){
@@ -1086,7 +1101,15 @@ tr.hit td{background:var(--warn-bg) !important}
     $('printArea').innerHTML = html;
     window.print();
   }
-  $('printBtn').addEventListener('click', function(){
+  $('printOne').addEventListener('click', function(){
+    if(!S.sel || !S.index[S.sel]) return;
+    var r = S.index[S.sel];
+    printHTML(doc('선택과목 확인표 · ' + klassLabel(r.klass) + ' ' + r.no + '번 ' + (r.name || r.id), cardHTML(r.id)));
+  });
+
+  $('printPack').addEventListener('click', printBulk);
+
+  $('printList').addEventListener('click', function(){
     if(S.tab === 'sum'){
       var c = counts();
       var head = '<table style="margin-bottom:16px"><tbody><tr>' +
@@ -1095,8 +1118,7 @@ tr.hit td{background:var(--warn-bg) !important}
         c.dup + '명</td><td class="c">' + c.over + '명</td></tr></tbody></table>';
       printHTML(doc('선택과목 수요조사 점검 결과' + (S.klass === 'all' ? '' : ' · ' + klassLabel(S.klass)), head + summaryHTML()));
     }
-    else if(S.tab === 'class') printHTML(doc('선택과목 ' + (S.klass === 'all' ? '전체 명단' : klassLabel(S.klass) + ' 명단'), classHTML()));
-    else if(S.sel) printHTML(doc('선택과목 확인표 · ' + (S.index[S.sel].name || S.sel), cardHTML(S.sel)));
+    else printHTML(doc('선택과목 ' + (S.klass === 'all' ? '전체 명단' : klassLabel(S.klass) + ' 명단'), classHTML()));
   });
   function printBulk(){
     var v = visible();
@@ -1111,37 +1133,45 @@ tr.hit td{background:var(--warn-bg) !important}
 
   /* ── 엑셀 저장 ────────────────────────────── */
   function exportXlsx(){
+    var pick = visible();                       // 화면에 보이는 범위 그대로 저장한다
+    if(!pick.length) return;
+    var only = {};
+    pick.forEach(function(r){ only[r.id] = true; });
+    var scope = S.klass === 'all' ? '전체' : klassLabel(S.klass);
+
     var wb = XLSX.utils.book_new();
     var sum = [['학번','반','번호','성명','판정','학기 중복','기본 교과 수','기본 교과 학점','선택한 기본 교과']];
-    S.rows.forEach(function(r){
+    pick.forEach(function(r){
       var tags = [];
       if(r.dup.length) tags.push('학기 중복');
       if(r.over) tags.push('기본 교과 초과');
       sum.push([r.id, r.klass, r.no, r.name, tags.join(', ') || '이상 없음', r.dup.length, r.baseCount, r.baseCredit, r.baseSubjects.join(' · ')]);
     });
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sum), '전체 판정');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(sum), scope + ' 판정');
 
-    var d = [['학번','성명','선택군','중복 과목','학기']];
-    S.rows.forEach(function(r){
-      r.dup.forEach(function(x){ d.push([r.id, r.name, x.group, x.subject, semLabel(x.from) + ' / ' + semLabel(x.to)]); });
+    var d = [['학번','반','번호','성명','선택군','중복 과목','학기']];
+    pick.forEach(function(r){
+      r.dup.forEach(function(x){ d.push([r.id, r.klass, r.no, r.name, x.group, x.subject, semLabel(x.from) + ' / ' + semLabel(x.to)]); });
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(d), '학기 중복');
 
-    var o = [['학번','성명','기본 교과 수','학점','선택한 기본 교과']];
-    S.rows.filter(function(r){ return r.over; }).forEach(function(r){
-      o.push([r.id, r.name, r.baseCount, r.baseCredit, r.baseSubjects.join(' · ')]);
+    var o = [['학번','반','번호','성명','기본 교과 수','학점','선택한 기본 교과']];
+    pick.filter(function(r){ return r.over; }).forEach(function(r){
+      o.push([r.id, r.klass, r.no, r.name, r.baseCount, r.baseCredit, r.baseSubjects.join(' · ')]);
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(o), '기본교과 ' + S.limit + unit() + ' 초과');
 
-    var p = [['학번','성명','계열','선택군','학년','학기','과목','기본 교과']];
-    S.sub.students.forEach(function(st){
+    var p = [['학번','반','번호','성명','계열','선택군','학년','학기','과목','기본 교과']];
+    pick.forEach(function(r){
+      var st = S.stu[r.id]; if(!st) return;
       st.picks.forEach(function(x){
-        p.push([st.id, st.name, st.track || '', x.group || '', x.grade || '', x.sem || '', x.subject, S.base[x.subject] ? 'O' : '']);
+        p.push([st.id, r.klass, r.no, st.name, st.track || '', x.group || '',
+                x.grade || '', x.sem || '', x.subject, S.base[x.subject] ? 'O' : '']);
       });
     });
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(p), '학생별 선택 현황');
 
-    XLSX.writeFile(wb, '선택과목_점검결과.xlsx');
+    XLSX.writeFile(wb, '선택과목_점검결과_' + scope + '_' + pick.length + '명.xlsx');
   }
 })();
 </script>
