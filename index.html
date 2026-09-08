@@ -47,7 +47,7 @@ button.run{
 button.run:disabled{background:var(--rule-2); cursor:not-allowed}
 button.ghost{font:inherit; font-size:13.5px; padding:7px 13px; background:var(--sheet); border:1px solid var(--rule-2); cursor:pointer}
 .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:6px 18px}
-.chk{display:flex; align-items:baseline; gap:7px; font-size:14px; padding:2px 0}
+.chk{display:flex; align-items:baseline; gap:7px; font-size:14px}
 .chk input{margin:0; accent-color:var(--navy)}
 .tag{font-size:11.5px; color:var(--ink-2); border:1px solid var(--rule); padding:0 5px; margin-left:2px}
 .gtitle{font-size:13px; color:var(--ink-2); margin:14px 0 5px; border-bottom:1px solid var(--rule); padding-bottom:3px}
@@ -73,17 +73,23 @@ tbody tr:nth-child(even) td{background:#FAFAF8}
 .drop strong{color:var(--ink); font-weight:600}
 .drop.over{border-color:var(--navy); background:#EEF1F6; color:var(--navy)}
 .drop + .filename{display:block; margin:8px 0 0}
-details.fold{background:var(--sheet); border:1px solid var(--rule)}
-details.fold summary{
-  list-style:none; cursor:pointer; padding:12px 16px; font-size:13.5px; color:var(--ink-2);
-  display:flex; align-items:center; gap:8px; user-select:none;
+.fold{background:var(--sheet); border:1px solid var(--rule)}
+.fold > .foldbar{
+  width:100%; text-align:left; cursor:pointer; padding:12px 16px; font:inherit; font-size:13.5px;
+  color:var(--ink-2); background:none; border:none; border-bottom:1px solid var(--rule);
+  display:flex; align-items:center; gap:8px;
 }
-details.fold summary::-webkit-details-marker{display:none}
-details.fold summary::before{content:"▸"; font-size:11px; color:var(--rule-2); transition:transform .12s}
-details.fold[open] summary::before{transform:rotate(90deg)}
-details.fold summary strong{color:var(--ink); font-weight:600}
-details.fold[open] summary{border-bottom:1px solid var(--rule)}
-details.fold .panel{border:none}
+.fold > .foldbar:hover{background:#F5F6F4}
+.fold > .foldbar::before{content:"\25BE"; font-size:10px; color:var(--rule-2); transition:transform .12s}
+.fold.collapsed > .foldbar{border-bottom:none}
+.fold.collapsed > .foldbar::before{transform:rotate(-90deg)}
+.foldbar strong{color:var(--ink); font-weight:600}
+.foldbar .more{margin-left:auto; font-size:12.5px; color:var(--navy)}
+.fold > .panel{border:none}
+.fold.collapsed > .panel{display:none}
+.chk{border-radius:3px; padding:3px 6px; margin:0 -6px; transition:background .12s}
+.chk.on{background:#FBF0C4; font-weight:700; color:var(--ink)}
+.chk.on .tag{border-color:#E0CE86; color:#7A6A20; font-weight:400}
 .lookup-box{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
 .lookup-box input[type=text]{
   font:inherit; font-size:14px; padding:8px 10px; border:1px solid var(--rule-2); background:var(--sheet); flex:1; min-width:160px;
@@ -131,10 +137,10 @@ details.fold .panel{border:none}
   <div>
     <h2>기본 교과 확인</h2>
     <p class="hint">편성표의 교과(군)가 국어·수학·영어인 선택과목을 자동으로 골라 두었습니다. 필요하면 고치세요.</p>
-    <details class="fold" id="baseFold" open>
-      <summary id="baseSummary">과목 목록 보기</summary>
-      <div class="panel"><div id="baseList"></div></div>
-    </details>
+    <div class="fold collapsed" id="baseFold">
+      <button type="button" class="foldbar" id="baseSummary" aria-expanded="false" aria-controls="basePanel">과목 목록<span class="more">펼치기</span></button>
+      <div class="panel" id="basePanel"><div id="baseList"></div></div>
+    </div>
   </div>
 </section>
 
@@ -143,9 +149,9 @@ details.fold .panel{border:none}
   <div>
     <h2>점검 규칙 정하기</h2>
     <p class="hint">한 과목이 두 학기에 걸쳐 열리는 선택군을 중복 점검 대상으로 잡아 두었습니다.</p>
-    <details class="fold" id="ruleFold" open>
-      <summary id="ruleSummary">규칙 보기</summary>
-      <div class="panel">
+    <div class="fold collapsed" id="ruleFold">
+      <button type="button" class="foldbar" id="ruleSummary" aria-expanded="false" aria-controls="rulePanel">규칙<span class="more">펼치기</span></button>
+      <div class="panel" id="rulePanel">
         <div id="dupList" class="grid"></div>
         <div class="row" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule)">
           <label for="limitMode">기본 교과 상한</label>
@@ -157,7 +163,7 @@ details.fold .panel{border:none}
           <span class="filename" id="limitEcho"></span>
         </div>
       </div>
-    </details>
+    </div>
   </div>
 </section>
 
@@ -503,6 +509,28 @@ details.fold .panel{border:none}
     window.addEventListener(ev, function(e){ if(!e.target.closest('.drop')) e.preventDefault(); });
   });
 
+  // 접기/펼치기
+  function wireFold(foldId, barId, redraw){
+    var fold = $(foldId), bar = $(barId);
+    bar.addEventListener('click', function(){
+      var collapsed = fold.classList.toggle('collapsed');
+      bar.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      if(redraw) redraw();
+      else {
+        var more = bar.querySelector('.more');
+        if(more) more.textContent = collapsed ? '펼치기' : '접기';
+      }
+    });
+  }
+  wireFold('baseFold','baseSummary', function(){ echo(); });
+  wireFold('ruleFold','ruleSummary', function(){ updateRuleSummary(); });
+
+  // 체크 상태를 라벨에 반영 (노란 음영 + 굵게)
+  function markChecked(input){
+    var label = input.closest('.chk');
+    if(label) label.classList.toggle('on', input.checked);
+  }
+
   // 1. 편성표
   $('curFile').addEventListener('change', function(e){
     var f = e.target.files[0]; if(!f) return;
@@ -550,8 +578,10 @@ details.fold .panel{border:none}
     });
     box.innerHTML = html;
     box.querySelectorAll('input[data-sub]').forEach(function(el){
+      markChecked(el);
       el.addEventListener('change', function(){
         if(el.checked) S.base[el.dataset.sub] = true; else delete S.base[el.dataset.sub];
+        markChecked(el);
         echo();
       });
     });
@@ -560,7 +590,9 @@ details.fold .panel{border:none}
   function echo(){
     var n = Object.keys(S.base).length;
     $('limitEcho').textContent = '기본 교과로 지정된 과목 ' + n + '개';
-    $('baseSummary').innerHTML = '<strong>기본 교과 ' + n + '개</strong> 지정됨 — 목록 펼치기/접기';
+    var open = !$('baseFold').classList.contains('collapsed');
+    $('baseSummary').innerHTML = '<strong>기본 교과 ' + n + '개</strong> 지정됨' +
+      '<span class="more">' + (open ? '접기' : '펼치기') + '</span>';
   }
 
   // 3. 규칙
@@ -574,12 +606,17 @@ details.fold .panel{border:none}
     });
     box.innerHTML = html;
     updateRuleSummary();
-    box.querySelectorAll('input[data-dup]').forEach(function(el){ el.addEventListener('change', updateRuleSummary); });
+    box.querySelectorAll('input[data-dup]').forEach(function(el){
+      markChecked(el);
+      el.addEventListener('change', function(){ markChecked(el); updateRuleSummary(); });
+    });
   }
   function updateRuleSummary(){
     var gs = dupGroups();
+    var open = !$('ruleFold').classList.contains('collapsed');
     $('ruleSummary').innerHTML = '<strong>' + (gs.length ? '선택군 ' + gs.join('·') + ' 중복 점검' : '중복 점검 없음') +
-      '</strong> · 기본 교과 ' + $('limitVal').value + ($('limitMode').value==='credit'?'학점':'과목') + ' 초과 시 위반 — 펼치기/접기';
+      '</strong> · 기본 교과 ' + $('limitVal').value + ($('limitMode').value==='credit'?'학점':'과목') + ' 초과 시 위반' +
+      '<span class="more">' + (open ? '접기' : '펼치기') + '</span>';
   }
   function dupGroups(){
     return Array.prototype.slice.call($('dupList').querySelectorAll('input[data-dup]:checked'))
