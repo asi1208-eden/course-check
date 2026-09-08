@@ -237,6 +237,12 @@ tr.hit td{background:var(--warn-bg) !important}
           <input type="number" id="limitVal" value="5" min="1" max="30" style="width:72px">
           <span class="note" style="margin:0">이 값을 넘으면 위반</span>
         </div>
+        <label class="chk on" style="margin-top:12px; padding:6px" id="trimWrap">
+          <input type="checkbox" id="trimPrior" checked>
+          <span>기이수에서 올해 조사 학년의 과목 빼기
+            <span class="tag">작년 신청 기록 섞임 방지</span></span>
+        </label>
+        <p class="note" style="margin:4px 0 0 6px" id="trimNote">기이수 파일은 이미 이수한 과목만 담아야 합니다. 작년 수요조사 원본을 그대로 올리면 내년 학년 신청분이 섞여 기본 교과가 부풀려집니다.</p>
       </div>
     </details>
   </div>
@@ -585,6 +591,41 @@ tr.hit td{background:var(--warn-bg) !important}
     return id;
   }
   function klassLabel(k){ return k === '기타' ? '반 미상' : k + '반'; }
+
+  // 기이수 파일에는 작년 수요조사에 함께 적힌 '내년 학년 신청 기록'이 섞여 들어오기 쉽다.
+  // 올해 제출내역이 다루는 학년에만 배치된 과목은 올해 자료가 최신본이므로 빼고 센다.
+  function priorFiltered(){
+    var raw = S.priorRaw || {};
+    var res = {out: raw, dropped: 0, names: [], people: 0};
+    if(!S.cur || !S.sub || !$('trimPrior').checked) return res;
+
+    var target = {};
+    S.sub.students.forEach(function(st){
+      st.picks.forEach(function(p){ if(p.grade != null) target[String(p.grade)] = 1; });
+    });
+    if(!Object.keys(target).length) return res;
+
+    var placedIn = {};
+    S.cur.electives.forEach(function(x){
+      x.placed.forEach(function(pl){
+        (placedIn[x.subject] || (placedIn[x.subject] = {}))[String(pl.grade)] = 1;
+      });
+    });
+
+    var out = {}, names = {}, dropped = 0, people = 0;
+    Object.keys(raw).forEach(function(id){
+      var kept = raw[id].filter(function(sub){
+        var gs = Object.keys(placedIn[sub] || {});
+        if(!gs.length) return true;                       // 편성표에 없는 과목은 그대로 둔다
+        var onlyThisYear = gs.every(function(g){ return target[g]; });
+        if(onlyThisYear){ dropped++; names[sub] = 1; return false; }
+        return true;
+      });
+      if(kept.length !== raw[id].length) people++;
+      out[id] = kept;
+    });
+    return {out: out, dropped: dropped, names: Object.keys(names), people: people, target: Object.keys(target)};
+  }
   function scopeLabel(){
     return S.klass === 'all' ? '전체' : klassLabel(S.klass);
   }
@@ -694,10 +735,11 @@ tr.hit td{background:var(--warn-bg) !important}
     read(f, 'priNote', function(wb){
       var known = {};
       S.cur.rows.forEach(function(r){ known[r.subject] = true; });
-      S.prior = L.parsePrior(grid(wb.Sheets[wb.SheetNames[0]]), known);
-      var n = Object.keys(S.prior).length;
+      S.priorRaw = L.parsePrior(grid(wb.Sheets[wb.SheetNames[0]]), known);
+      S.priorName = f.name;
+      var n = Object.keys(S.priorRaw).length;
       mark('priDrop', n > 0);
-      note('priNote', n ? f.name + ' · ' + n + '명분 기이수 과목 반영' : '읽을 과목이 없습니다. 학번 열과 과목명을 확인해 주세요.', !n);
+      if(!n) note('priNote', '읽을 과목이 없습니다. 학번 열과 과목명을 확인해 주세요.', true);
       run();
     });
   });
@@ -711,7 +753,10 @@ tr.hit td{background:var(--warn-bg) !important}
     var bits = [];
     bits.push(S.cur ? '편성표 ' + $('curSheet').value : '편성표 없음');
     bits.push(S.sub ? '제출내역 ' + S.sub.students.length + '명' : '제출내역 없음');
-    if(Object.keys(S.prior).length) bits.push('기이수 ' + Object.keys(S.prior).length + '명');
+    if(S.priorRaw && Object.keys(S.priorRaw).length){
+      bits.push('기이수 ' + Object.keys(S.priorRaw).length + '명' +
+        (S.priorInfo && S.priorInfo.dropped ? ' (' + S.priorInfo.dropped + '건 제외)' : ''));
+    }
     $('setupEcho').textContent = bits.join(' · ');
   }
 
@@ -757,6 +802,10 @@ tr.hit td{background:var(--warn-bg) !important}
     run();
   });
   $('limitVal').addEventListener('input', run);
+  $('trimPrior').addEventListener('change', function(){
+    $('trimWrap').classList.toggle('on', this.checked);
+    run();
+  });
 
   function optEcho(){
     var gs = dupGroups();
@@ -776,6 +825,11 @@ tr.hit td{background:var(--warn-bg) !important}
     S.mode = $('limitMode').value;
     S.limit = Number($('limitVal').value) || 1;
     optEcho();
+    var pf = priorFiltered();
+    S.prior = pf.out;
+    S.priorInfo = pf;
+    priorNote(pf);
+    setupEcho();
     S.rows = L.check(S.cur, S.sub, {
       baseSubjects: S.base, dupGroups: dupGroups(), limit: S.limit, mode: S.mode, prior: S.prior
     });
@@ -828,6 +882,26 @@ tr.hit td{background:var(--warn-bg) !important}
   function inScope(){
     return S.klass === 'all' ? S.rows : S.rows.filter(function(r){ return r.klass === S.klass; });
   }
+  function priorNote(pf){
+    if(!S.priorRaw){ return; }
+    var n = Object.keys(S.priorRaw).length;
+    if(!n) return;
+    var msg = (S.priorName || '기이수 파일') + ' · ' + n + '명분';
+    var bad = false;
+    if(pf.dropped){
+      bad = true;
+      var yr = (pf.target || []).map(function(g){ return g + '학년'; }).join('·');
+      msg += ' · ' + yr + ' 배치 과목 ' + pf.dropped + '건(' + pf.people + '명)은 올해 제출내역이 최신이므로 빼고 셌습니다';
+      if(pf.names.length) msg += ' — ' + pf.names.slice(0, 4).join(', ') + (pf.names.length > 4 ? ' 외 ' + (pf.names.length - 4) + '과목' : '');
+    } else {
+      msg += ' 반영';
+    }
+    note('priNote', msg, bad);
+    $('trimNote').textContent = pf.dropped
+      ? '작년 수요조사 원본이 섞인 것으로 보입니다. 체크를 풀면 걸러 내지 않고 그대로 합산합니다.'
+      : '기이수 파일은 이미 이수한 과목만 담아야 합니다. 작년 수요조사 원본을 그대로 올리면 내년 학년 신청분이 섞여 기본 교과가 부풀려집니다.';
+  }
+
   function counts(){
     var scope = inScope();
     var c = {all:scope.length, dup:0, over:0, issue:0};
