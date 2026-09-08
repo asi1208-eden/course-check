@@ -50,25 +50,33 @@ a{color:var(--navy)}
 select,input[type=number],input[type=text]{
   font:inherit; font-size:14px; padding:7px 9px; border:1px solid var(--rule-2); background:var(--sheet); color:var(--ink);
 }
-.setup-bar{
-  width:100%; display:flex; gap:10px; align-items:center; padding:12px 16px; background:none; border:none;
-  border-top:1px solid var(--rule); cursor:pointer; text-align:left; font-size:13.5px; color:var(--ink-2);
+/* 접었다 폈다 하는 머리띠 */
+.head{
+  display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center;
+  padding:10px 12px; background:#EDF1F6; border:1px solid #C3CEDC;
 }
-.setup-bar:hover{background:#F5F6F4}
-.setup-bar::before{content:"\25BE"; font-size:10px; color:var(--rule-2)}
-.setup-bar .right{margin-left:auto; color:var(--navy)}
-.setup.folded .setup-body{display:none}
-.setup.folded .setup-bar{border-top:none}
-.setup.folded .setup-bar::before{transform:rotate(-90deg)}
+.head .htitle{font-size:14px; font-weight:600; color:var(--navy); display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+.head .htitle em{font-style:normal; font-weight:400; font-size:12.5px; color:#5B6B7D; letter-spacing:-0.01em}
+.toggle{
+  margin-left:auto; display:inline-flex; align-items:center; gap:6px;
+  padding:6px 14px; background:var(--navy); color:#fff; border:1px solid var(--navy);
+  cursor:pointer; font-size:13.5px; font-weight:500; white-space:nowrap;
+}
+.toggle:hover{background:#0F2439}
+.toggle:focus-visible{outline:2px solid var(--seal); outline-offset:2px}
+.toggle::after{content:"\25B4"; font-size:9px; line-height:1}
+.toggle[aria-expanded="false"]{background:var(--sheet); color:var(--navy)}
+.toggle[aria-expanded="false"]::after{content:"\25BE"}
 
-/* 기준 서랍 */
-.opts{border-top:1px solid var(--rule); margin-top:16px; padding-top:12px}
-.opts>summary{cursor:pointer; font-size:13.5px; color:var(--navy); list-style:none}
-.opts>summary::-webkit-details-marker{display:none}
-.opts>summary::before{content:"\25B8 "; color:var(--rule-2); font-size:11px}
-.opts[open]>summary::before{content:"\25BE "}
-.opts>summary em{font-style:normal; color:var(--ink-2); margin-left:6px; font-size:13px}
-.optbody{padding:12px 0 2px}
+.setup .head{border-left:none; border-right:none; border-top:none}
+.setup.folded .setup-body{display:none}
+
+/* 점검 기준 상자 */
+.opts{margin-bottom:18px; background:var(--sheet); border:1px solid #C3CEDC}
+.opts .head{border:none; border-bottom:1px solid #C3CEDC}
+.opts.folded .head{border-bottom:none}
+.opts.folded .optbody{display:none}
+.optbody{padding:14px}
 .gtitle{font-size:12.5px; color:var(--ink-2); margin:14px 0 5px; border-bottom:1px solid var(--rule); padding-bottom:3px}
 .gtitle:first-child{margin-top:0}
 .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:4px 16px}
@@ -147,10 +155,15 @@ th{background:#F3F4F1; font-weight:500; font-size:12.5px; color:var(--ink-2); wh
 td.c,th.c{text-align:center; white-space:nowrap}
 tbody tr:nth-child(even) td{background:#FAFAF8}
 tr.hit td{background:var(--warn-bg) !important}
-.subj{display:inline-block; margin-right:4px}
+.subj{display:inline-block; padding:1px 3px}
+.sep{display:inline-block; margin:0 9px; color:var(--rule-2); font-weight:400}
+.grp{display:block; padding:2px 0}
+.grp + .grp{border-top:1px dotted var(--rule); margin-top:4px; padding-top:5px}
+.grp .gname{display:inline-block; min-width:2.2em; font-weight:600; color:var(--navy)}
 .subj.base{background:var(--mark); padding:0 4px}
 .subj.dup{color:var(--seal); font-weight:600; text-decoration:underline}
 .legend{font-size:12.5px; color:var(--ink-2); margin:8px 0 0}
+.onscreen{color:var(--ink-2)}
 .legend i{font-style:normal; background:var(--mark); padding:0 4px}
 .rowlink{cursor:pointer}
 .rowlink:hover td{background:#EEF1F6 !important}
@@ -169,18 +182,43 @@ tr.hit td{background:var(--warn-bg) !important}
 /* ── 인쇄 ──────────────────────────────────── */
 #printArea{display:none}
 @media print{
-  body{background:#fff}
+  body{background:#fff; color:#000; font-size:11.5pt; line-height:1.8}
   .wrap{display:none !important}
   #printArea{display:block; padding:0}
   .sheetdoc{page-break-after:always}
   .sheetdoc:last-child{page-break-after:auto}
-  .sheetdoc h1{font-size:17px; margin:0 0 2px; color:#000}
-  .sheetdoc .meta{font-size:12px; color:#555; margin:0 0 14px}
-  table{font-size:12px}
-  th,td{border:1px solid #999; padding:5px 7px}
-  th{background:#eee !important; -webkit-print-color-adjust:exact; print-color-adjust:exact}
-  tr.hit td, .subj.base, .verdictbox{-webkit-print-color-adjust:exact; print-color-adjust:exact}
-  @page{margin:14mm}
+
+  .sheetdoc h1{font-size:16.5pt; margin:0 0 4px; color:#000; letter-spacing:-0.02em}
+  .sheetdoc .meta{font-size:9.5pt; color:#444; margin:0 0 18px; line-height:1.5}
+  .sheetdoc h2{font-size:15pt; margin:0 0 4px}
+  .sheetdoc h2 .tag{font-size:10.5pt; padding:1px 6px}
+  .sheetdoc h3{font-size:12.5pt; margin:24px 0 9px}
+  .sheetdoc .who{font-size:11pt; color:#333; margin:0 0 16px}
+
+  .verdictbox{font-size:11pt; line-height:1.8; padding:13px 16px; margin-bottom:20px; border:1px solid #999}
+  .verdictbox b{font-size:12.5pt; margin-bottom:5px}
+  .verdictbox ul{margin:8px 0 0; padding-left:20px}
+  .verdictbox li{margin-top:7px}
+  .note{font-size:10.5pt; line-height:1.9; color:#333}
+  .legend{font-size:9.5pt; line-height:1.6; margin-top:10px}
+  .onscreen{display:none !important}
+  .gauge{height:9px; margin:8px 0 6px}
+
+  table{font-size:11pt; margin-top:4px}
+  th,td{border:1px solid #888; padding:10px 12px; line-height:1.85; vertical-align:top}
+  th{background:#ececec !important; font-size:10pt; -webkit-print-color-adjust:exact; print-color-adjust:exact}
+  td.c,th.c{white-space:nowrap}
+  tbody tr:nth-child(even) td{background:#fff}
+
+  .subj{padding:2px 5px; white-space:nowrap}
+  .sep{margin:0 12px; color:#999}
+  .grp{padding:3px 0}
+  .grp + .grp{margin-top:6px; padding-top:7px; border-top:1px dotted #bbb}
+  .grp .gname{min-width:2.6em}
+
+  tr.hit td, .subj.base, .verdictbox, .subj.dup{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  tr{page-break-inside:avoid}
+  @page{margin:15mm}
 }
 </style>
 </head>
@@ -192,6 +230,10 @@ tr.hit td{background:var(--warn-bg) !important}
 </header>
 
 <section class="setup" id="setup">
+  <div class="head">
+    <div class="htitle">자료 <em id="setupEcho">편성표와 제출내역을 올려 주세요</em></div>
+    <button type="button" class="toggle" id="setupBar" aria-expanded="true">접기</button>
+  </div>
   <div class="setup-body" id="setupBody">
     <div class="drops">
       <div class="dropcell">
@@ -220,35 +262,36 @@ tr.hit td{background:var(--warn-bg) !important}
       </div>
     </div>
 
-    <details class="opts" id="opts">
-      <summary>점검 기준 <em id="optEcho">편성표를 올리면 자동으로 잡습니다</em></summary>
-      <div class="optbody">
-        <h3 style="margin:0 0 8px; font-size:13.5px">기본 교과로 볼 과목</h3>
-        <p class="note" style="margin:0 0 10px">교과(군)가 국어·수학·영어인 선택과목을 골라 두었습니다. 체크를 고치면 곧바로 다시 점검합니다.</p>
-        <div id="baseList"></div>
-        <h3 style="margin:18px 0 8px; font-size:13.5px">학기 중복을 볼 선택군</h3>
-        <div id="dupList" class="grid"></div>
-        <div class="limitrow">
-          <label for="limitMode">기본 교과 상한</label>
-          <select id="limitMode">
-            <option value="count">과목 수</option>
-            <option value="credit">학점</option>
-          </select>
-          <input type="number" id="limitVal" value="5" min="1" max="30" style="width:72px">
-          <span class="note" style="margin:0">이 값을 넘으면 위반</span>
-        </div>
-        <label class="chk on" style="margin-top:12px; padding:6px" id="trimWrap">
-          <input type="checkbox" id="trimPrior" checked>
-          <span>기이수에서 올해 조사 학년의 과목 빼기
-            <span class="tag">작년 신청 기록 섞임 방지</span></span>
-        </label>
-        <p class="note" style="margin:4px 0 0 6px" id="trimNote">기이수 파일은 이미 이수한 과목만 담아야 합니다. 작년 수요조사 원본을 그대로 올리면 내년 학년 신청분이 섞여 기본 교과가 부풀려집니다.</p>
-      </div>
-    </details>
   </div>
-  <button type="button" class="setup-bar" id="setupBar">
-    <span id="setupEcho">자료 올리기</span><span class="right" id="setupMore">접기</span>
-  </button>
+</section>
+
+<section class="opts folded hidden" id="opts">
+  <div class="head">
+    <div class="htitle">점검 기준 <em id="optEcho">편성표를 올리면 자동으로 잡습니다</em></div>
+    <button type="button" class="toggle" id="optToggle" aria-expanded="false">펼치기</button>
+  </div>
+  <div class="optbody">
+    <h3 style="margin:0 0 8px; font-size:13.5px">기본 교과로 볼 과목</h3>
+    <p class="note" style="margin:0 0 10px">교과(군)가 국어·수학·영어인 선택과목을 골라 두었습니다. 체크를 고치면 곧바로 다시 점검합니다.</p>
+    <div id="baseList"></div>
+    <h3 style="margin:18px 0 8px; font-size:13.5px">학기 중복을 볼 선택군</h3>
+    <div id="dupList" class="grid"></div>
+    <div class="limitrow">
+  <label for="limitMode">기본 교과 상한</label>
+  <select id="limitMode">
+    <option value="count">과목 수</option>
+    <option value="credit">학점</option>
+  </select>
+  <input type="number" id="limitVal" value="5" min="1" max="30" style="width:72px">
+  <span class="note" style="margin:0">이 값을 넘으면 위반</span>
+    </div>
+    <label class="chk on" style="margin-top:12px; padding:6px" id="trimWrap">
+  <input type="checkbox" id="trimPrior" checked>
+  <span>기이수에서 올해 조사 학년의 과목 빼기
+    <span class="tag">작년 신청 기록 섞임 방지</span></span>
+    </label>
+    <p class="note" style="margin:4px 0 0 6px" id="trimNote">기이수 파일은 이미 이수한 과목만 담아야 합니다. 작년 수요조사 원본을 그대로 올리면 내년 학년 신청분이 섞여 기본 교과가 부풀려집니다.</p>
+  </div>
 </section>
 
 <section class="banner hidden" id="banner"></section>
@@ -707,6 +750,7 @@ tr.hit td{background:var(--warn-bg) !important}
     mark('curDrop', true);
     note('curNote', (S.fname || '') + ' · 선택군 ' + cur.groupNames.join('·') + ' · 선택과목 ' + cur.electives.length + '개');
     S.base = L.defaultBaseSubjects(cur);
+    $('opts').classList.remove('hidden');
     renderOptions();
     S.mode = $('limitMode').value; S.limit = Number($('limitVal').value) || 1;
     optEcho();
@@ -745,9 +789,25 @@ tr.hit td{background:var(--warn-bg) !important}
   });
 
   /* ── 접기 ─────────────────────────────────── */
-  $('setupBar').addEventListener('click', function(){
-    var folded = $('setup').classList.toggle('folded');
-    $('setupMore').textContent = folded ? '펼치기' : '접기';
+  function fold(sectionId, btnId, forced){
+    var sec = $(sectionId), btn = $(btnId);
+    var folded = typeof forced === 'boolean'
+      ? (sec.classList.toggle('folded', forced), forced)
+      : sec.classList.toggle('folded');
+    btn.textContent = folded ? '펼치기' : '접기';
+    btn.setAttribute('aria-expanded', String(!folded));
+    return folded;
+  }
+  $('setupBar').addEventListener('click', function(){ fold('setup', 'setupBar'); });
+  $('optToggle').addEventListener('click', function(){ fold('opts', 'optToggle'); });
+  // 머리띠 아무 데나 눌러도 열고 닫힌다
+  $('setup').querySelector('.head').addEventListener('click', function(e){
+    if(e.target.closest('.toggle')) return;
+    fold('setup', 'setupBar');
+  });
+  $('opts').querySelector('.head').addEventListener('click', function(e){
+    if(e.target.closest('.toggle')) return;
+    fold('opts', 'optToggle');
   });
   function setupEcho(){
     var bits = [];
@@ -848,8 +908,7 @@ tr.hit td{background:var(--warn-bg) !important}
     $('board').classList.remove('hidden');
     if(!S.folded){
       S.folded = true;
-      $('setup').classList.add('folded');
-      $('setupMore').textContent = '펼치기';
+      fold('setup', 'setupBar', true);
     }
     renderBanner(); renderChips(); renderList(); renderPane();
   }
@@ -1032,7 +1091,7 @@ tr.hit td{background:var(--warn-bg) !important}
     var scope = inScope();
     var dup = scope.filter(function(r){ return r.dup.length; });
     var over = scope.filter(function(r){ return r.over; }).sort(function(a,b){ return b.value - a.value; });
-    var h = S.klass === 'all' ? '' : '<p class="who" style="margin:0 0 12px">' + esc(klassLabel(S.klass)) + ' 학생만 봅니다. 전체를 보려면 왼쪽 위에서 전체 반을 고르세요.</p>';
+    var h = S.klass === 'all' ? '' : '<p class="who onscreen" style="margin:0 0 12px">' + esc(klassLabel(S.klass)) + ' 학생만 봅니다. 전체를 보려면 왼쪽 위에서 전체 반을 고르세요.</p>';
     h += '<h3>학기 중복 선택 <span class="tag">' + dup.length + '명</span></h3>';
     if(dup.length){
       h += '<table><thead><tr><th class="c">학번</th><th>성명</th><th class="c">선택군</th><th>중복 과목</th><th>학기</th></tr></thead><tbody>';
@@ -1059,7 +1118,7 @@ tr.hit td{background:var(--warn-bg) !important}
     } else {
       h += '<p class="note" style="margin:0">상한을 넘은 학생이 없습니다.</p>';
     }
-    h += '<p class="legend">표의 줄을 누르면 그 학생의 선택 내역이 열립니다.</p>';
+    h += '<p class="legend onscreen">표의 줄을 누르면 그 학생의 선택 내역이 열립니다.</p>';
     return h;
   }
 
@@ -1073,9 +1132,10 @@ tr.hit td{background:var(--warn-bg) !important}
     return order.filter(function(g){ return by[g]; }).map(function(g){
       var seen = {}, uniq = [];
       by[g].forEach(function(x){ if(!seen[x]){ seen[x] = 1; uniq.push(x); } });
-      return '<b style="display:inline; font-weight:600">' + esc(g) + '</b> ' +
-             uniq.map(function(x){ return '<span class="subj' + (S.base[x] ? ' base' : '') + '">' + esc(x) + '</span>'; }).join('');
-    }).join(' &nbsp;/&nbsp; ');
+      return '<span class="grp"><span class="gname">' + esc(g) + '</span>' +
+             uniq.map(function(x){ return '<span class="subj' + (S.base[x] ? ' base' : '') + '">' + esc(x) + '</span>'; })
+                 .join('<span class="sep">/</span>') + '</span>';
+    }).join('');
   }
 
   function classHTML(){
@@ -1098,7 +1158,7 @@ tr.hit td{background:var(--warn-bg) !important}
            '<td>' + picksLine(r.id) + '</td></tr>';
     });
     h += '</tbody></table>';
-    h += '<p class="legend"><i>노란 바탕</i>은 기본 교과. 줄을 누르면 그 학생의 확인표가 열립니다.</p>';
+    h += '<p class="legend"><i>노란 바탕</i>은 기본 교과입니다.<span class="onscreen"> 줄을 누르면 그 학생의 확인표가 열립니다.</span></p>';
     return h;
   }
 
@@ -1133,7 +1193,9 @@ tr.hit td{background:var(--warn-bg) !important}
     h += '<h3>기본 교과</h3>';
     h += '<div class="gauge' + (v.over ? ' over' : '') + '"><i style="width:' + pct + '%"></i></div>';
     h += '<p class="note" style="margin:0">' + v.baseCount + '과목 / ' + v.baseCredit + '학점 · 상한 ' + S.limit + unit() +
-         '<br>' + esc(v.baseSubjects.join(' · ') || '선택한 기본 교과 없음') + '</p>';
+         '<br>' + (v.baseSubjects.length
+           ? v.baseSubjects.map(function(x){ return '<span class="subj base">' + esc(x) + '</span>'; }).join('<span class="sep">/</span>')
+           : '선택한 기본 교과 없음') + '</p>';
     if(S.prior[sid] && S.prior[sid].length){
       h += '<p class="note" style="margin:6px 0 0">기이수 반영: ' + esc(S.prior[sid].join(' · ')) + '</p>';
     }
@@ -1155,7 +1217,7 @@ tr.hit td{background:var(--warn-bg) !important}
           var cls = 'subj' + (S.base[s] ? ' base' : '') + (dupSet[g + '|' + s] ? ' dup' : '');
           if(dupSet[g + '|' + s]) hit = true;
           return '<span class="' + cls + '">' + esc(s) + '</span>';
-        }).join('');
+        }).join('<span class="sep">/</span>');
         h += '<tr' + (hit ? ' class="hit"' : '') + '><td class="c">' + esc(g === '기타' ? '기타' : g) +
              '</td><td class="c">' + semLabel(k) + '</td><td>' + subs + '</td></tr>';
       });
