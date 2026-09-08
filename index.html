@@ -165,6 +165,10 @@ tr.hit td{background:var(--warn-bg) !important}
 .legend{font-size:12.5px; color:var(--ink-2); margin:8px 0 0}
 .onscreen{color:var(--ink-2)}
 .legend i{font-style:normal; background:var(--mark); padding:0 4px}
+.roll{table-layout:fixed}
+.roll .nm{text-align:center; word-break:keep-all}
+.roll .nm.keep{white-space:nowrap}
+.roll .judge{font-size:12.5px; line-height:1.45; word-break:keep-all}
 .rowlink{cursor:pointer}
 .rowlink:hover td{background:#EEF1F6 !important}
 .blank{padding:40px 18px; text-align:center; color:var(--ink-2); font-size:14px}
@@ -211,6 +215,8 @@ tr.hit td{background:var(--warn-bg) !important}
   tbody tr:nth-child(even) td{background:#fff}
 
   .subj{padding:2px 5px; white-space:nowrap}
+  .roll .nm{font-size:11.5pt}
+  .roll .judge{font-size:9.5pt; line-height:1.5}
   .sep{margin:0 12px; color:#999}
   .grp{padding:3px 0}
   .grp + .grp{margin-top:6px; padding-top:7px; border-top:1px dotted #bbb}
@@ -309,11 +315,11 @@ tr.hit td{background:var(--warn-bg) !important}
   <main class="detail">
     <div class="tabs">
       <button class="tab" id="tabSum" aria-selected="true">위반 요약</button>
-      <button class="tab" id="tabClass" aria-selected="false">반 명단</button>
+      <button class="tab" id="tabClass" aria-selected="false">반 현황</button>
       <button class="tab" id="tabOne" aria-selected="false">학생 상세</button>
       <div class="acts">
-        <button class="ghost" id="printOne">이 학생 인쇄</button>
-        <button class="ghost" id="printList">명단 인쇄</button>
+        <button class="ghost" id="printOne">인쇄</button>
+        <button class="ghost" id="printList">인쇄</button>
         <button class="ghost" id="printPack">확인표 묶음 인쇄</button>
       </div>
     </div>
@@ -991,12 +997,15 @@ tr.hit td{background:var(--warn-bg) !important}
     var n = visible().length;
     var who = S.klass === 'all' ? '' : klassLabel(S.klass) + ' ';
 
-    var one = $('printOne');
-    one.textContent = S.sel && S.index[S.sel] ? (S.index[S.sel].name || S.sel) + ' 인쇄' : '이 학생 인쇄';
+    // 보고 있는 탭에 해당하는 인쇄 단추만 남긴다
+    var onStudent = S.tab === 'one';
+    var one = $('printOne'), list = $('printList');
+    one.classList.toggle('hidden', !onStudent);
+    list.classList.toggle('hidden', onStudent);
+    one.title = '이 학생의 확인표를 한 쪽 인쇄합니다';
     one.disabled = !S.sel || !S.index[S.sel];
-
-    $('printList').textContent = who ? who + '명단 인쇄' : '전체 명단 인쇄';
-    $('printList').disabled = !n;
+    list.title = (S.tab === 'sum' ? '위반 요약을' : who + '현황표를') + ' 인쇄합니다';
+    list.disabled = !n;
 
     var pack = $('printPack');
     pack.textContent = '확인표 묶음 ' + n + '명';
@@ -1075,7 +1084,7 @@ tr.hit td{background:var(--warn-bg) !important}
     $('tabSum').setAttribute('aria-selected', S.tab === 'sum');
     $('tabClass').setAttribute('aria-selected', S.tab === 'class');
     $('tabOne').setAttribute('aria-selected', S.tab === 'one');
-    $('tabClass').textContent = S.klass === 'all' ? '전체 명단' : klassLabel(S.klass) + ' 명단';
+    $('tabClass').textContent = S.klass === 'all' ? '전체 현황' : klassLabel(S.klass) + ' 현황';
     $('tabOne').textContent = S.sel && S.index[S.sel]
       ? '학생 상세 · ' + (S.index[S.sel].name || S.sel) : '학생 상세';
     $('pane').innerHTML = S.tab === 'sum' ? summaryHTML()
@@ -1142,19 +1151,24 @@ tr.hit td{background:var(--warn-bg) !important}
     var v = inScope();
     if(!v.length) return '<div class="blank">이 반에 해당하는 학생이 없습니다.</div>';
     var bad = v.filter(function(r){ return r.dup.length || r.over; }).length;
-    var h = '<h2>' + esc(S.klass === 'all' ? '전체 명단' : klassLabel(S.klass) + ' 명단') + '</h2>';
+    var h = '<h2>' + esc(S.klass === 'all' ? '전체 현황' : klassLabel(S.klass) + ' 현황') + '</h2>';
     h += '<p class="who">' + v.length + '명 · ' + (bad ? '조치 필요 ' + bad + '명' : '기준 위반 없음') + '</p>';
-    h += '<table><thead><tr><th class="c">' + (S.klass === 'all' ? '학번' : '번호') +
-         '</th><th>성명</th><th class="c">판정</th><th class="c">기본 교과</th><th>선택 과목</th></tr></thead><tbody>';
+    h += '<table class="roll"><colgroup>' +
+         '<col style="width:' + (S.klass === 'all' ? '72px' : '48px') + '">' +
+         '<col style="width:86px"><col style="width:76px"><col style="width:94px"><col>' +
+         '</colgroup><thead><tr><th class="c">' + (S.klass === 'all' ? '학번' : '번호') +
+         '</th><th class="c">성명</th><th class="c">판정</th><th class="c">기본 교과</th><th>선택 과목</th></tr></thead><tbody>';
     v.forEach(function(r){
       var tags = [];
       if(r.dup.length) tags.push('학기 중복');
       if(r.over) tags.push('기본 교과 초과');
+      var nm = String(r.name || '');
+      var short = Array.from(nm).length <= 3;   // 한글 3글자까지는 한 줄에
       h += '<tr class="rowlink' + (tags.length ? ' hit' : '') + '" data-go="' + esc(r.id) + '">' +
            '<td class="c">' + esc(S.klass === 'all' ? r.id : r.no) + '</td>' +
-           '<td>' + esc(r.name) + '</td>' +
-           '<td class="c">' + (tags.length ? esc(tags.join(' · ')) : '이상 없음') + '</td>' +
-           '<td class="c">' + r.baseCount + '과목 / ' + r.baseCredit + '학점</td>' +
+           '<td class="nm' + (short ? ' keep' : '') + '">' + esc(nm) + '</td>' +
+           '<td class="c judge">' + (tags.length ? tags.map(esc).join('<br>') : '이상 없음') + '</td>' +
+           '<td class="c">' + r.baseCount + '과목<br>' + r.baseCredit + '학점</td>' +
            '<td>' + picksLine(r.id) + '</td></tr>';
     });
     h += '</tbody></table>';
@@ -1254,14 +1268,13 @@ tr.hit td{background:var(--warn-bg) !important}
         c.dup + '명</td><td class="c">' + c.over + '명</td></tr></tbody></table>';
       printHTML(doc('선택과목 수요조사 점검 결과' + (S.klass === 'all' ? '' : ' · ' + klassLabel(S.klass)), head + summaryHTML()));
     }
-    else printHTML(doc('선택과목 ' + (S.klass === 'all' ? '전체 명단' : klassLabel(S.klass) + ' 명단'), classHTML()));
+    else printHTML(doc('선택과목 ' + (S.klass === 'all' ? '전체 현황' : klassLabel(S.klass) + ' 현황'), classHTML()));
   });
   function printBulk(){
     var v = visible();
     if(!v.length) return;
-    if(v.length > 40 && !confirm(v.length + '명이면 ' + (v.length + 1) + '쪽이 나옵니다. 계속할까요?')) return;
-    var cover = doc('선택과목 ' + (S.klass === 'all' ? '전체 명단' : klassLabel(S.klass) + ' 명단'), classHTML());
-    printHTML(cover + v.map(function(r){
+    if(v.length > 40 && !confirm(v.length + '명이면 ' + v.length + '쪽이 나옵니다. 계속할까요?')) return;
+    printHTML(v.map(function(r){
       return doc('선택과목 확인표 · ' + klassLabel(r.klass) + ' ' + r.no + '번 ' + (r.name || r.id), cardHTML(r.id));
     }).join(''));
   }
